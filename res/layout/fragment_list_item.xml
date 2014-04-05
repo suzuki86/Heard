@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:orientation="horizontal"
+  android:layout_width="fill_parent"
+  android:layout_height="fill_parent"
+  android:background="#f4f1e5"
+>
+<LinearLayout 
+  android:orientation="vertical"
+  android:layout_width="fill_parent"
+  android:layout_height="wrap_content"
+  android:background="#ffffff"
+>
+<TextView
+    android:id="@+id/post_title"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:textAppearance="?android:attr/textAppearanceListItemSmall"
+    android:gravity="center_vertical"
+    android:paddingTop="20dp"
+    android:paddingBottom="10dp"
+    android:paddingLeft="20dp"
+    android:paddingRight="20dp"
+    android:textColor="#444444"
+    android:minHeight="?android:attr/listPreferredItemHeightSmall"/>
+<TextView 
+  android:textSize="14sp" 
+  android:id="@+id/counts"
+  android:textColor="#444444" 
+  android:paddingLeft="20dp"
+  android:paddingRight="20dp"
+  android:paddingBottom="20dp"
+  android:layout_height="wrap_content" 
+  android:layout_width="match_parent"
+  android:gravity="right"
+/>
+</LinearLayout>
+</LinearLayout>
