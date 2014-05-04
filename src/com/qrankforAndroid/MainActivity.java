@@ -16,6 +16,8 @@
 
 package com.qrankforAndroid;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.net.URL;
 import java.net.MalformedURLException;
@@ -64,7 +66,6 @@ import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.util.EntityUtils;
-
 import org.json.JSONObject;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -72,20 +73,26 @@ import org.json.JSONException;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
+import android.view.LayoutInflater;
+import android.widget.LinearLayout;
 
+import com.qrankforAndroid.*;
 
 public class MainActivity extends Activity {
     private DrawerLayout mDrawerLayout;
     private ListView mDrawerList;
     private ListView mPostList;
+    private LinearLayout postListLayout;
     private ActionBarDrawerToggle mDrawerToggle;
 
     private CharSequence mDrawerTitle;
     private CharSequence mTitle;
     private String[] mPlanetTitles;
     private TextView textView;
+    private LayoutInflater layoutInflater;
+    private View convertView;
     
-    private getPosts task;
+    private GetPosts task;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -133,82 +140,25 @@ public class MainActivity extends Activity {
         };
         mDrawerLayout.setDrawerListener(mDrawerToggle);
         
-        // 最初に position が 0 の内容を表示する。
+        // 最初に position が　 0 の内容を表示する。
         if (savedInstanceState == null) {
+          
         	// API経由でデータを取得する。
-            task = new getPosts();
-            task.execute("0");
+          task = new GetPosts(MainActivity.this);
+          task.execute("0");
         }
-    }
-    
-    public class CustomData {
-        private String title;
-        private String qiita_post_id;
-        private String stockCount;
-        private String hatenaBookmarkCount;
-        
-        public CustomData(String title, String qiita_post_id, String stockCount, String hatenaBookmarkCount){
-        	this.title = title;
-        	this.qiita_post_id = qiita_post_id;
-        	this.stockCount = stockCount;
-        	this.hatenaBookmarkCount = hatenaBookmarkCount;
-        }
-        
-        public String getTitle(){
-            return this.title;
-        }
-     
-        public String getQiitaPostId(){
-            return this.qiita_post_id;
-        }
-        
-        public String getStockCount(){
-            return this.stockCount;
-        }
-        
-        public String getHatenaBookmarkCount(){
-        	return this.hatenaBookmarkCount;
-        }
-        
-    }
-    
-    public class CustomAdapter extends ArrayAdapter<CustomData>{
-    	 private LayoutInflater layoutInflater_;
-    	 
-    	 public CustomAdapter(Context context, int textViewResourceId, List<CustomData> objects) {
-    		 super(context, textViewResourceId, objects);
-    		 layoutInflater_ = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-    	 }
-    	 
-    	 @Override
-    	 public View getView(int position, View convertView, ViewGroup parent) {
-	    	 CustomData item = (CustomData)getItem(position);
-	    	 
-	    	 if (null == convertView) {
-	    		 convertView = layoutInflater_.inflate(R.layout.fragment_list_item, null);
-	    	 }
-	    	 
-	    	 ((TextView)convertView.findViewById(R.id.post_title)).setText(item.getTitle());
-	    	 ((TextView)convertView.findViewById(R.id.counts)).setText(item.getStockCount() + " ストック, " + item.getHatenaBookmarkCount() + " はてブ");
-	    	 
-	    	 return convertView;
-    	 }
     }
     
     // オプションメニューを作っているところ。
     // XMLファイルから定義を呼び出している。
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // MenuInflater inflater = getMenuInflater();
-        // inflater.inflate(R.menu.main, menu);
         return super.onCreateOptionsMenu(menu);
     }
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        // If the nav drawer is open, hide action items related to the content view
         boolean drawerOpen = mDrawerLayout.isDrawerOpen(mDrawerList);
-        // menu.findItem(R.id.action_websearch).setVisible(!drawerOpen);
         return super.onPrepareOptionsMenu(menu);
     }
 
@@ -217,24 +167,12 @@ public class MainActivity extends Activity {
         if (mDrawerToggle.onOptionsItemSelected(item)) {
             return true;
         }
-        // Handle action buttons
         switch(item.getItemId()) {
         default:
             return super.onOptionsItemSelected(item);
         }
     }
 
-    
-    private class PostItemClickListener implements ListView.OnItemClickListener {
-        @Override
-        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        	ListView listView = (ListView)parent;
-        	final CustomData item = (CustomData)listView.getAdapter().getItem(position);
-       		Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse("http://qiita.com/items/" + item.getQiitaPostId()));
-       		startActivity(i);
-        }
-    }
-    
     private class DrawerItemClickListener implements ListView.OnItemClickListener {
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -245,11 +183,11 @@ public class MainActivity extends Activity {
         	
         	// ProgressBar を表示する。
         	ProgressBar progressBar = (ProgressBar)findViewById(R.id.progressbar);
-            progressBar.setVisibility(View.VISIBLE);
-        	
-        	// API経由でデータを取得する。
-            task = new getPosts();
-            task.execute(Integer.toString(position));
+          progressBar.setVisibility(View.VISIBLE);
+            
+          // API経由でデータを取得する。
+          task = new GetPosts(MainActivity.this);
+          task.execute(Integer.toString(position));
         	
         	mDrawerLayout.closeDrawer(mDrawerList);
         }
@@ -266,99 +204,5 @@ public class MainActivity extends Activity {
         super.onConfigurationChanged(newConfig);
         mDrawerToggle.onConfigurationChanged(newConfig);
     }
-
-    class getPosts extends AsyncTask<String, Integer, List>{
-        
-    	private String json;
-    	private JSONObject j;
-    	
-        public getPosts(){
-            super();
-        }
-        
-        @Override
-        protected List doInBackground(String... param){
-        	Bitmap bitmap;
-        	String days = "0";
-        	
-        	if(param[0].equals("1")){
-        		days = "7";
-        	}else if(param[0].equals("2")){
-        		days = "30";
-        	}else{
-        		days = "0";
-        	}
-        	
-        	// Drawer Navigation で選択されたカテゴリーのデータを取得する。
-        	String uri = "http://qrank.wbsrv.net/api/?days=" + days;
-        	DefaultHttpClient client = new DefaultHttpClient();
-        	HttpGet get = new HttpGet(uri);
-        	HttpResponse response = null;
-        	
-        	try {
-        	    response = client.execute(get);
-        	    if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-        	        json = EntityUtils.toString(response.getEntity());
-        	        try{
-        	        	JSONArray rootObject = new JSONArray(json);
-        	        	List<CustomData> objects = new ArrayList<CustomData>();
-        	        	
-        	        	for(int i = 0; i < rootObject.length(); i++){
-        	        		JSONObject j = rootObject.getJSONObject(i);
-    	        			
-        	                CustomData listElement = new CustomData(
-        	                		j.getString("title"),
-        	                		j.getString("qiita_post_id"),
-        	                		j.getString("stockCount"),
-        	                		j.getString("hatenaBookmarkCount")
-        	                );
-        	                objects.add(listElement);
-        	        	}
-        	        	
-    	            	return objects;
-    	        		
-        	        }catch(JSONException e){
-        	        	Log.d("custom", e.getMessage());
-        	        }
-        	    } else {
-        	        Log.d("custom", "Request failed.");
-        	    }
-        	}
-        	catch (ClientProtocolException e) {
-        	    e.printStackTrace();
-        	}
-        	catch (IOException e) {
-        	    e.printStackTrace();
-        	}
-            
-            return null;
-        }
-        
-        @Override
-        protected void onPostExecute(List result){
-        	
-        	// エラーメッセージのビューを非表示にする。
-    		TextView errorMessage = (TextView) findViewById(R.id.error_message);
-    		errorMessage.setVisibility(View.GONE);
-        	
-    		// 読み込みアイコンを非表示にする。
-        	ProgressBar progressBar = (ProgressBar)findViewById(R.id.progressbar);
-            progressBar.setVisibility(View.GONE);
-        	
-            // データの取得に失敗した場合はエラーメッセージのビューを表示する。
-            if(result == null){
-        		errorMessage.setVisibility(View.VISIBLE);
-        	}else{
-        		
-        		// データをアダプターに渡し、リストビューに表示させる。
-	            CustomAdapter customAdapter = new CustomAdapter(MainActivity.this, R.layout.fragment_list_item, result);
-	        	mPostList = (ListView) findViewById(R.id.content_frame);
-	        	mPostList.setOnItemClickListener(new PostItemClickListener());
-	        	mPostList.setAdapter(customAdapter);
-	        	mPostList.setVisibility(View.VISIBLE);
-        	}
-        }
-
-    }
-    
 }
+
