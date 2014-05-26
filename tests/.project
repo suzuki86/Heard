@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>qrankforAndroidTest</name>
+	<name>HeardTest</name>
 	<comment></comment>
 	<projects>
-		<project>qrankforAndroid</project>
+		<project>Heard</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
